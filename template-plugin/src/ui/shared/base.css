@@ -1,0 +1,32 @@
+html,
+body,
+#app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+:root {
+  color: #0f172a;
+  font-family: "SF Pro Display", "SF Pro Text", "PingFang SC", sans-serif;
+  background: transparent;
+}
+
+body {
+  overflow: hidden;
+  color: #0f172a;
+  font-family: inherit;
+  background: transparent;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}

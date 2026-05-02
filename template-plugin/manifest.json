@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 2,
+  "plugin": {
+    "id": "plugin.template.full",
+    "title": "Template Plugin",
+    "version": "0.1.0"
+  },
+  "install": {
+    "runtime": "node",
+    "entry": "scripts/install.mjs"
+  },
+  "runtime": {
+    "nodeEntry": "dist/runtime/index.cjs",
+    "uiRoot": "dist/ui"
+  },
+  "permissions": [
+    "setAttachment",
+    "setSearchExtension",
+    "setTags",
+    "setPinned"
+  ],
+  "attachmentRenderers": [
+    {
+      "id": "template-renderer",
+      "title": "Template Preview",
+      "attachmentType": "plugin.template.full.preview",
+      "height": 320,
+      "uiEntry": "renderers/template-renderer/index.html"
+    }
+  ],
+  "detectors": [
+    {
+      "id": "template-detector",
+      "title": "Template Detector",
+      "supportedInputKinds": ["text", "image", "path_reference"],
+      "attachmentTypes": ["plugin.template.full.preview"]
+    }
+  ],
+  "actions": [
+    {
+      "id": "template-auto-action",
+      "title": "Template Auto Action",
+      "supportedItemTypes": ["text", "image", "path_reference"],
+      "lifecycle": "auto-run",
+      "keywords": ["template", "metadata", "debug"]
+    },
+    {
+      "id": "template-draft-action",
+      "title": "Template Draft Action",
+      "supportedItemTypes": ["text", "image", "path_reference"],
+      "lifecycle": "draft",
+      "keywords": ["template", "draft", "metadata", "copy"],
+      "uiEntry": "actions/template-draft-action/index.html"
+    }
+  ]
+}
