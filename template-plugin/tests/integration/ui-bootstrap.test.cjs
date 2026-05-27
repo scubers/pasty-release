@@ -57,7 +57,7 @@ function freshAttachmentPasty(item, attachment) {
     global.window.__PASTY_PLUGIN_ITEM__ = item;
   }
 
-  const pasty = require(path.resolve(__dirname, '../../sdk/dist/ui/index.cjs')).pasty;
+  const pasty = require(path.resolve(__dirname, '../../node_modules/@pasty/plugin-sdk/dist/ui/index.cjs')).pasty;
 
   // Seed attachment via event AFTER require (listeners registered at module load)
   if (attachment !== null && attachment !== undefined) {

@@ -15,11 +15,7 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "ignoreDeprecations": "6.0",
-    "baseUrl": ".",
-    "paths": {
-      "@pasty/plugin-sdk/runtime": ["sdk/src/runtime/index.ts"],
-      "@pasty/plugin-sdk/ui": ["sdk/src/ui/index.ts"]
-    }
+    "baseUrl": "."
   },
   "include": [
     "env.d.ts",

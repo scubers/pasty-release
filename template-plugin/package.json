@@ -11,20 +11,20 @@
     "dev": "vite --host 127.0.0.1 --open /src/preview/preview-host/index.html",
     "dev:renderer": "vite --host 127.0.0.1 --open /src/preview/preview-host/index.html?view=renderer",
     "dev:action": "vite --host 127.0.0.1 --open /src/preview/preview-host/index.html?view=action",
-    "build:sdk": "node ./sdk/scripts/build.mjs",
     "build:runtime": "node ./scripts/build-runtime.mjs",
     "build:ui": "node ./scripts/build-ui.mjs",
     "verify:build": "node ./scripts/verify-build.mjs",
     "typecheck": "vue-tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build:artifacts": "npm run clean && npm run build:sdk && npm run build:runtime && npm run build:ui && npm run verify:build",
+    "build:artifacts": "npm run clean && npm run build:runtime && npm run build:ui && npm run verify:build",
     "build": "npm run typecheck && npm run lint && npm run build:artifacts",
     "verify": "npm run build && npm test",
-    "test": "node --experimental-strip-types --require ./sdk/tests/setup.cjs --test ./tests/**/*.test.cjs"
+    "test": "node --experimental-strip-types --require ./tests/setup.cjs --test ./tests/**/*.test.cjs",
+    "export": "node ./scripts/export.mjs"
   },
   "dependencies": {
-    "@pasty/plugin-sdk": "file:./sdk",
+    "@pasty/plugin-sdk": "^0.2.0",
     "vue": "^3.5.13"
   },
   "devDependencies": {

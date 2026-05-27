@@ -2,7 +2,7 @@
 
 > 写新插件先看 [GUIDE.md](./GUIDE.md)。它和本工程一起就是开发 Pasty 插件的完整起步资料。
 
-`template-plugin/` 是给三方插件作者和 AI 助手准备的**最小全功能**模板工程，演示了 Pasty 当前所有的扩展点：detector、attachment renderer（compact + expanded）、auto-run action、draft action，并内嵌 `@pasty/plugin-sdk`。
+`template-plugin/` 是给三方插件作者和 AI 助手准备的**最小全功能**模板工程，演示了 Pasty 当前所有的扩展点：detector、attachment renderer（compact + expanded）、auto-run action、draft action，依赖独立发布的 SDK 包 `@pasty/plugin-sdk`。
 
 只需要这一个工程就能开发出生产可用的 Pasty 插件——架构、API、字段约束都以代码为真相源，文档同步更新。
 
@@ -11,24 +11,17 @@
 | 文档 | 用途 |
 |---|---|
 | [GUIDE.md](./GUIDE.md) | 插件开发完整指南：快速开始、架构、manifest、三类入口实现、入参形状、权限模型、坑点 Q&A |
-| [sdk/API.md](./sdk/API.md) | 由 `protocol/plugin/src/catalog.ts` 自动生成的 API 真相源：23 个 capability、7 个 host event、22 个命名类型的精确签名 |
-| [sdk/SPECIFICATION.md](./sdk/SPECIFICATION.md) | SDK 形状规则（Topic / OptionalTopic / Stream / Verb）、命名约定、扩展 capability 的 PR 流程 |
+| `API.md`（随 [`@pasty/plugin-sdk`](https://www.npmjs.com/package/@pasty/plugin-sdk) 发布） | 由 `protocol/plugin/src/catalog.ts` 自动生成的 API 真相源：23 个 capability、7 个 host event、22 个命名类型的精确签名 |
+| `SPECIFICATION.md`（随 [`@pasty/plugin-sdk`](https://www.npmjs.com/package/@pasty/plugin-sdk) 发布） | SDK 形状规则（Topic / OptionalTopic / Stream / Verb）、命名约定、扩展 capability 的 PR 流程 |
 
-> `sdk/API.md` 是**镜像文件**。运行 `cd protocol/plugin && npm run codegen` 时由 codegen 自动同步——文档与 catalog 不会漂移。
+> SDK 包内的 `API.md` 是**镜像文件**。运行 `cd protocol/plugin && npm run codegen` 时由 codegen 自动同步——文档与 catalog 不会漂移。
 
 ## 工程结构
 
 ```text
 template-plugin/
 ├── manifest.json
-├── package.json
-├── sdk/                                ← 内嵌 @pasty/plugin-sdk（通过 file:./sdk 引用）
-│   ├── API.md                          ← codegen 同步的 API 真相源（自动镜像）
-│   ├── README.md                       ← SDK 公共符号速查
-│   ├── SPECIFICATION.md                ← 形状规则与扩展流程
-│   ├── package.json
-│   ├── dist/                           ← 编译产物（npm install 自动生成）
-│   └── src/
+├── package.json                        ← 依赖 @pasty/plugin-sdk（独立 npm 包）
 ├── scripts/
 │   ├── build-runtime.mjs
 │   ├── build-ui.mjs
@@ -103,14 +96,14 @@ template-plugin/
 
 通常**不需要改**：
 
-- `sdk/`——内嵌 SDK；扩展 capability 见 [`sdk/SPECIFICATION.md`](./sdk/SPECIFICATION.md)
+- `@pasty/plugin-sdk`——独立 SDK 包；扩展 capability 见包内 `SPECIFICATION.md`（[`@pasty/plugin-sdk`](https://www.npmjs.com/package/@pasty/plugin-sdk)）
 - `src/shared/`——共享工具
 - `scripts/build-runtime.mjs` / `scripts/build-ui.mjs`
 
 ## 三个常用命令
 
 ```sh
-npm install       # 装依赖 + sdk/prepare 自动编译 SDK
+npm install       # 装依赖（含 @pasty/plugin-sdk）
 npm run dev       # 启动 Vite 预览工作台
 npm test          # 运行 tests/ 下集成测试
 npm run build     # 生产构建到 dist/
