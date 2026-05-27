@@ -10,7 +10,7 @@
     "entry": "scripts/install.mjs"
   },
   "runtime": {
-    "nodeEntry": "dist/runtime/index.cjs",
+    "nodeEntry": "dist/plugin.cjs",
     "uiRoot": "dist/ui"
   },
   "permissions": [
@@ -24,8 +24,36 @@
       "id": "template-renderer",
       "title": "Template Preview",
       "attachmentType": "plugin.template.full.preview",
-      "height": 320,
+      "height": 220,
       "uiEntry": "renderers/template-renderer/index.html"
+    },
+    {
+      "id": "template-expanded-renderer",
+      "title": "Template Expanded",
+      "attachmentType": "plugin.template.full.expanded",
+      "height": { "min": 120, "max": 480 },
+      "uiEntry": "renderers/template-expanded-renderer/index.html"
+    },
+    {
+      "id": "gallery-renderer-fixed",
+      "title": "Gallery (fixed 240)",
+      "attachmentType": "plugin.template.full.gallery.fixed",
+      "height": 240,
+      "uiEntry": "renderers/gallery-renderer-fixed/index.html"
+    },
+    {
+      "id": "gallery-renderer-auto",
+      "title": "Gallery (auto)",
+      "attachmentType": "plugin.template.full.gallery.auto",
+      "height": "auto",
+      "uiEntry": "renderers/gallery-renderer-auto/index.html"
+    },
+    {
+      "id": "gallery-renderer-bounded",
+      "title": "Gallery (bounded 120-480)",
+      "attachmentType": "plugin.template.full.gallery.bounded",
+      "height": { "min": 120, "max": 480 },
+      "uiEntry": "renderers/gallery-renderer-bounded/index.html"
     }
   ],
   "detectors": [
@@ -33,7 +61,20 @@
       "id": "template-detector",
       "title": "Template Detector",
       "supportedInputKinds": ["text", "image", "path_reference"],
-      "attachmentTypes": ["plugin.template.full.preview"]
+      "attachmentTypes": [
+        "plugin.template.full.preview",
+        "plugin.template.full.expanded"
+      ]
+    },
+    {
+      "id": "gallery-detector",
+      "title": "Capability Gallery Detector",
+      "supportedInputKinds": ["text", "image", "path_reference"],
+      "attachmentTypes": [
+        "plugin.template.full.gallery.fixed",
+        "plugin.template.full.gallery.auto",
+        "plugin.template.full.gallery.bounded"
+      ]
     }
   ],
   "actions": [
@@ -45,12 +86,47 @@
       "keywords": ["template", "metadata", "debug"]
     },
     {
-      "id": "template-draft-action",
-      "title": "Template Draft Action",
+      "id": "template-auto-action-text",
+      "title": "Template Auto Action (Text)",
+      "supportedItemTypes": ["text"],
+      "lifecycle": "auto-run",
+      "keywords": ["template", "metadata", "debug", "text", "quota"]
+    },
+    {
+      "id": "template-auto-action-image",
+      "title": "Template Auto Action (Image)",
+      "supportedItemTypes": ["image"],
+      "lifecycle": "auto-run",
+      "keywords": ["template", "metadata", "debug", "image", "quota"]
+    },
+    {
+      "id": "gallery-auto-text",
+      "title": "Gallery Auto (text)",
+      "supportedItemTypes": ["text", "image", "path_reference"],
+      "lifecycle": "auto-run",
+      "keywords": ["gallery", "demo", "showcase", "text"]
+    },
+    {
+      "id": "gallery-auto-image",
+      "title": "Gallery Auto (image)",
+      "supportedItemTypes": ["image"],
+      "lifecycle": "auto-run",
+      "keywords": ["gallery", "demo", "showcase", "image"]
+    },
+    {
+      "id": "gallery-auto-none",
+      "title": "Gallery Auto (none)",
+      "supportedItemTypes": ["text", "image", "path_reference"],
+      "lifecycle": "auto-run",
+      "keywords": ["gallery", "demo", "showcase", "none"]
+    },
+    {
+      "id": "gallery-draft",
+      "title": "Gallery Draft",
       "supportedItemTypes": ["text", "image", "path_reference"],
       "lifecycle": "draft",
-      "keywords": ["template", "draft", "metadata", "copy"],
-      "uiEntry": "actions/template-draft-action/index.html"
+      "keywords": ["gallery", "demo", "showcase", "draft"],
+      "uiEntry": "actions/gallery-draft/index.html"
     }
   ]
 }

@@ -6,6 +6,19 @@ const path = require("node:path");
 const projectRoot = path.resolve(__dirname, "..", "..");
 const manifestPath = path.resolve(projectRoot, "manifest.json");
 
+// Local helper: composite detector equivalent to createCompositeDetector() in src/plugin.ts.
+// Replaces require("src/runtime/detectors/templateDetector.ts") after §5 restructure.
+async function detectTemplateAttachment(input) {
+  const { buildPreviewArtifact } = require(path.resolve(projectRoot, "src/features/preview-renderer/detector.ts"));
+  const { buildExpandedArtifact } = require(path.resolve(projectRoot, "src/features/expanded-renderer/detector.ts"));
+  const out = [];
+  const a = buildPreviewArtifact(input);
+  if (a) out.push(a);
+  const b = buildExpandedArtifact(input);
+  if (b) out.push(b);
+  return out;
+}
+
 function loadManifest() {
   return JSON.parse(fs.readFileSync(manifestPath, "utf8"));
 }
@@ -14,30 +27,51 @@ test("manifest registers template detector, renderer, and actions", () => {
   const manifest = loadManifest();
 
   assert.equal(manifest.plugin.id, "plugin.template.full");
-  assert.equal(manifest.detectors.length, 1);
-  assert.equal(manifest.attachmentRenderers.length, 1);
-  assert.equal(manifest.actions.length, 2);
+  // template-* entries are the "minimal sample" set. The gallery (gallery-*)
+  // adds its own entries; restrict these length asserts to the template- subset.
+  // NOTE: template-draft-action was removed in plugin-api-shrink; the live
+  // draft action is now gallery-draft under the gallery- prefix.
+  const templateDetectors = manifest.detectors.filter((entry) => entry.id.startsWith("template-"));
+  const templateRenderers = manifest.attachmentRenderers.filter((entry) => entry.id.startsWith("template-"));
+  const templateActions = manifest.actions.filter((entry) => entry.id.startsWith("template-"));
+  assert.equal(templateDetectors.length, 1);
+  assert.equal(templateRenderers.length, 2);
+  assert.equal(templateActions.length, 3);
 
   const detector = manifest.detectors.find((entry) => entry.id === "template-detector");
   assert.ok(detector, "expected template-detector to be declared in manifest");
   assert.deepEqual(detector.supportedInputKinds, ["text", "image", "path_reference"]);
-  assert.deepEqual(detector.attachmentTypes, ["plugin.template.full.preview"]);
+  assert.deepEqual(
+    detector.attachmentTypes,
+    ["plugin.template.full.preview", "plugin.template.full.expanded"]
+  );
 
   const renderer = manifest.attachmentRenderers.find((entry) => entry.id === "template-renderer");
   assert.ok(renderer, "expected template-renderer to be declared in manifest");
   assert.equal(renderer.attachmentType, "plugin.template.full.preview");
   assert.equal(renderer.uiEntry, "renderers/template-renderer/index.html");
+  assert.equal(renderer.height, 220);
 
   const autoAction = manifest.actions.find((entry) => entry.id === "template-auto-action");
   assert.ok(autoAction, "expected template-auto-action to be declared in manifest");
   assert.equal(autoAction.lifecycle, "auto-run");
   assert.deepEqual(autoAction.supportedItemTypes, ["text", "image", "path_reference"]);
 
-  const draftAction = manifest.actions.find((entry) => entry.id === "template-draft-action");
-  assert.ok(draftAction, "expected template-draft-action to be declared in manifest");
-  assert.equal(draftAction.lifecycle, "draft");
-  assert.deepEqual(draftAction.supportedItemTypes, ["text", "image", "path_reference"]);
-  assert.equal(draftAction.uiEntry, "actions/template-draft-action/index.html");
+  // template-draft-action was removed in plugin-api-shrink (features/draft-action/ deleted).
+  const removedDraftAction = manifest.actions.find((entry) => entry.id === "template-draft-action");
+  assert.ok(!removedDraftAction, "template-draft-action must not be declared in manifest after plugin-api-shrink");
+});
+
+test("manifest declares expanded renderer with bounded auto-fit height policy", () => {
+  const manifest = loadManifest();
+  const expanded = manifest.attachmentRenderers.find(
+    (entry) => entry.id === "template-expanded-renderer"
+  );
+
+  assert.ok(expanded, "expected template-expanded-renderer to be declared in manifest");
+  assert.equal(expanded.attachmentType, "plugin.template.full.expanded");
+  assert.equal(expanded.uiEntry, "renderers/template-expanded-renderer/index.html");
+  assert.deepEqual(expanded.height, { min: 120, max: 480 });
 });
 
 test("package declares only the template build dependencies", () => {
@@ -56,40 +90,78 @@ test("package declares only the template build dependencies", () => {
 });
 
 test("runtime setup registers template handlers", () => {
-  const pluginDefinition = require(path.resolve(projectRoot, "src/runtime/index.js"));
-  const runtime = pluginDefinition.setup({});
+  // Build the runtime object directly from feature factories (avoids requiring
+  // src/plugin.ts which has bare ESM specifiers without .ts extensions that
+  // trip up node --experimental-strip-types module resolution).
+  // NOTE: template-draft-action was removed in plugin-api-shrink (features/draft-action/ deleted).
+  // The live draft action is gallery-draft under capability-gallery/runtime/draft-action.ts.
+  const { createTemplatePreviewRenderer } = require(path.resolve(projectRoot, "src/features/preview-renderer/renderer.ts"));
+  const { createTemplateExpandedRenderer } = require(path.resolve(projectRoot, "src/features/expanded-renderer/renderer.ts"));
+  const { createTemplateAutoAction, createTemplateAutoActionTextOnly, createTemplateAutoActionImageOnly } = require(path.resolve(projectRoot, "src/features/auto-action/action.ts"));
+  const { buildPreviewArtifact } = require(path.resolve(projectRoot, "src/features/preview-renderer/detector.ts"));
+  const { buildExpandedArtifact } = require(path.resolve(projectRoot, "src/features/expanded-renderer/detector.ts"));
+
+  const runtime = {
+    detectors: { "template-detector": { detect: async (input) => { const out = []; const a = buildPreviewArtifact(input); if (a) out.push(a); const b = buildExpandedArtifact(input); if (b) out.push(b); return out; } } },
+    attachmentRenderers: { "template-renderer": createTemplatePreviewRenderer(), "template-expanded-renderer": createTemplateExpandedRenderer() },
+    actions: { "template-auto-action": createTemplateAutoAction(), "template-auto-action-text": createTemplateAutoActionTextOnly(), "template-auto-action-image": createTemplateAutoActionImageOnly() }
+  };
 
   assert.ok(runtime.detectors["template-detector"], "expected template-detector runtime handler");
   assert.ok(
     runtime.attachmentRenderers["template-renderer"],
     "expected template-renderer runtime handler"
   );
+  assert.ok(
+    runtime.attachmentRenderers["template-expanded-renderer"],
+    "expected template-expanded-renderer runtime handler"
+  );
   assert.ok(runtime.actions["template-auto-action"], "expected template-auto-action runtime handler");
   assert.ok(
-    runtime.actions["template-draft-action"],
-    "expected template-draft-action runtime handler"
+    runtime.actions["template-auto-action-text"],
+    "expected template-auto-action-text runtime handler"
+  );
+  assert.ok(
+    runtime.actions["template-auto-action-image"],
+    "expected template-auto-action-image runtime handler"
   );
 });
 
+test("manifest declares more actions than free-tier quota to demo plugin-pro gating", () => {
+  const manifest = loadManifest();
+  const FREE_TIER_ACTION_QUOTA = 3;
+  assert.ok(
+    manifest.actions.length > FREE_TIER_ACTION_QUOTA,
+    `template manifest should declare more than ${FREE_TIER_ACTION_QUOTA} actions to exercise plugin-pro gating`
+  );
+
+  const variantIDs = manifest.actions.map((entry) => entry.id);
+  assert.ok(variantIDs.includes("template-auto-action-text"));
+  assert.ok(variantIDs.includes("template-auto-action-image"));
+});
+
 test("template source files exist in runtime and ui trees", () => {
+  // NOTE: src/features/draft-action/ was removed in plugin-api-shrink.
+  // The draft action demo now lives in capability-gallery/runtime/draft-action.ts.
   const requiredPaths = [
-    "src/runtime/shared/templateCapabilityMetadata.js",
-    "src/runtime/shared/templateAttachmentPayload.js",
-    "src/runtime/detectors/templateDetector.js",
-    "src/runtime/renderers/templateRenderer.js",
-    "src/runtime/actions/templateAutoAction.js",
-    "src/runtime/actions/templateDraftAction.js",
-    "src/ui/AttachmentTemplateApp.vue",
-    "src/ui/DraftActionTemplateApp.vue",
-    "src/ui/preview/PreviewShellApp.vue",
-    "src/ui/preview/preview-host/main.js",
-    "src/ui/preview/preview-host/index.html",
-    "src/ui/preview/scenarios/attachmentScenarios.js",
-    "src/ui/preview/scenarios/actionScenarios.js",
-    "src/ui/renderers/template-renderer/index.html",
-    "src/ui/renderers/template-renderer/main.js",
-    "src/ui/actions/template-draft-action/index.html",
-    "src/ui/actions/template-draft-action/main.js"
+    "src/shared/display.ts",
+    "src/shared/debug.ts",
+    "src/features/preview-renderer/detector.ts",
+    "src/features/preview-renderer/renderer.ts",
+    "src/features/expanded-renderer/detector.ts",
+    "src/features/expanded-renderer/renderer.ts",
+    "src/features/auto-action/action.ts",
+    "src/features/preview-renderer/app.vue",
+    "src/features/expanded-renderer/app.vue",
+    "src/preview/PreviewShellApp.vue",
+    "src/preview/preview-host/main.ts",
+    "src/preview/preview-host/index.html",
+    "src/preview/scenarios/attachmentScenarios.ts",
+    "src/preview/scenarios/actionScenarios.ts",
+    "src/features/preview-renderer/index.html",
+    "src/features/preview-renderer/main.ts",
+    "src/features/expanded-renderer/index.html",
+    "src/features/expanded-renderer/main.ts",
   ];
 
   for (const relativePath of requiredPaths) {
@@ -102,7 +174,7 @@ test("template source files exist in runtime and ui trees", () => {
 
 test("preview workbench uses resizable host viewport instead of fixed shell sizes", () => {
   const previewShellSource = fs.readFileSync(
-    path.resolve(projectRoot, "src/ui/preview/PreviewShellApp.vue"),
+    path.resolve(projectRoot, "src/preview/PreviewShellApp.vue"),
     "utf8"
   );
 
@@ -160,25 +232,22 @@ test("preview workbench uses resizable host viewport instead of fixed shell size
 });
 
 test("template detector emits preview attachment for text input", async () => {
-  const { detectTemplateAttachment } = require(path.resolve(
-    projectRoot,
-    "src/runtime/detectors/templateDetector.js"
-  ));
 
   const artifacts = await detectTemplateAttachment({
     content: {
       kind: "text",
-      payload: {
-        text: "Template plugin headline\nSecond line\nThird line"
-      }
+      text: "Template plugin headline\nSecond line\nThird line"
     }
   });
 
-  assert.equal(artifacts.length, 1);
-  assert.equal(artifacts[0].attachmentType, "plugin.template.full.preview");
-  assert.equal(artifacts[0].searchProjection.scope, "template_preview");
+  assert.equal(artifacts.length, 2);
+  const compact = artifacts.find(
+    (artifact) => artifact.attachmentType === "plugin.template.full.preview"
+  );
+  assert.ok(compact, "expected compact preview artifact");
+  assert.equal(compact.searchProjection.scope, "template_preview");
 
-  const payload = JSON.parse(artifacts[0].payloadJson);
+  const payload = JSON.parse(compact.payloadJson);
   assert.equal(payload.kind, "template_preview");
   assert.equal(payload.contentKind, "text");
   assert.equal(payload.display.typeLabel, "Text");
@@ -188,52 +257,85 @@ test("template detector emits preview attachment for text input", async () => {
 });
 
 test("template detector emits compact payloads for image and path-reference input", async () => {
-  const { detectTemplateAttachment } = require(path.resolve(
-    projectRoot,
-    "src/runtime/detectors/templateDetector.js"
-  ));
 
   const imageArtifacts = await detectTemplateAttachment({
     item: {
       id: "image-item",
       type: "image",
-      text: null,
       tags: [],
       sourceAppID: "preview.app"
     },
     content: {
       kind: "image",
-      payload: {
-        dataBase64: Buffer.from("image-bytes").toString("base64"),
-        width: 320,
-        height: 200,
-        format: "png"
-      }
+      bytes: 11,
+      width: 320,
+      height: 200,
+      format: "png"
     }
   });
-  assert.equal(imageArtifacts.length, 1);
-  assert.equal(JSON.parse(imageArtifacts[0].payloadJson).display.typeLabel, "Image");
+  assert.equal(imageArtifacts.length, 2);
+  const imageCompact = imageArtifacts.find(
+    (artifact) => artifact.attachmentType === "plugin.template.full.preview"
+  );
+  assert.ok(imageCompact, "expected compact image artifact");
+  assert.equal(JSON.parse(imageCompact.payloadJson).display.typeLabel, "Image");
 
   const pathArtifacts = await detectTemplateAttachment({
     item: {
       id: "path-item",
       type: "path_reference",
-      text: null,
       tags: [],
       sourceAppID: "finder"
     },
     content: {
       kind: "path_reference",
-      payload: {
-        entries: [
-          { kind: "file", path: "/tmp/report.txt", displayName: "report.txt" },
-          { kind: "folder", path: "/tmp/archive", displayName: "archive" }
-        ]
-      }
+      entries: [
+        { kind: "file", path: "/tmp/report.txt", displayName: "report.txt" },
+        { kind: "folder", path: "/tmp/archive", displayName: "archive" }
+      ]
     }
   });
-  assert.equal(pathArtifacts.length, 1);
-  assert.equal(JSON.parse(pathArtifacts[0].payloadJson).display.typeLabel, "Path");
+  assert.equal(pathArtifacts.length, 2);
+  const pathCompact = pathArtifacts.find(
+    (artifact) => artifact.attachmentType === "plugin.template.full.preview"
+  );
+  assert.ok(pathCompact, "expected compact path artifact");
+  assert.equal(JSON.parse(pathCompact.payloadJson).display.typeLabel, "Path");
+});
+
+test("template detector emits both compact and expanded artifacts per input", async () => {
+
+  const artifacts = await detectTemplateAttachment({
+    item: {
+      id: "text-item",
+      type: "text",
+      tags: ["template-plugin", "expanded-demo"],
+      sourceAppID: "com.preview.editor"
+    },
+    content: {
+      kind: "text",
+      text: "Expanded preview demo\nSecond line"
+    }
+  });
+
+  assert.equal(artifacts.length, 2);
+  const compact = artifacts.find(
+    (artifact) => artifact.attachmentType === "plugin.template.full.preview"
+  );
+  const expanded = artifacts.find(
+    (artifact) => artifact.attachmentType === "plugin.template.full.expanded"
+  );
+  assert.ok(compact, "expected compact artifact");
+  assert.ok(expanded, "expected expanded artifact");
+
+  assert.equal(compact.attachmentKey, "primary");
+  assert.equal(expanded.attachmentKey, "expanded");
+
+  const expandedPayload = JSON.parse(expanded.payloadJson);
+  assert.equal(expandedPayload.kind, "template_expanded");
+  assert.equal(expandedPayload.extended.contentKind, "text");
+  assert.deepEqual(expandedPayload.extended.tags, ["template-plugin", "expanded-demo"]);
+  assert.equal(expanded.searchProjection.scope, "template_expanded");
 });
 
 test("template detector manifest and runtime reject legacy pathReference spelling", async () => {
@@ -243,38 +345,50 @@ test("template detector manifest and runtime reject legacy pathReference spellin
   assert.ok(detector, "expected template-detector to be declared in manifest");
   assert.equal(detector.supportedInputKinds.includes("pathReference"), false);
 
-  const { detectTemplateAttachment } = require(path.resolve(
-    projectRoot,
-    "src/runtime/detectors/templateDetector.js"
-  ));
-
   await assert.rejects(
     () =>
       detectTemplateAttachment({
         item: {
           id: "path-item",
           type: "path_reference",
-          text: null,
           tags: [],
           sourceAppID: "finder"
         },
         content: {
           kind: "pathReference",
-          payload: {
-            entries: [
-              { kind: "file", path: "/tmp/report.txt", displayName: "report.txt" }
-            ]
-          }
+          entries: [
+            { kind: "file", path: "/tmp/report.txt", displayName: "report.txt" }
+          ]
         }
       }),
     /path_reference/
   );
 });
 
-test("template renderer resolves buttons and copies payload json", async () => {
-  const { resolveAttachment, invokeOperation } = require(path.resolve(
+test("template renderer only exposes resolveAttachment — no invokeOperation", () => {
+  const { createTemplatePreviewRenderer } = require(path.resolve(
     projectRoot,
-    "src/runtime/renderers/templateRenderer.js"
+    "src/features/preview-renderer/renderer.ts"
+  ));
+  const renderer = createTemplatePreviewRenderer();
+  assert.equal(typeof renderer.resolveAttachment, "function", "expected resolveAttachment method");
+  assert.equal(renderer.invokeOperation, undefined, "expected no invokeOperation on renderer");
+});
+
+test("template renderer resolveAttachment returns shouldDisplay: false for unparseable payload", () => {
+  const { resolveAttachment } = require(path.resolve(
+    projectRoot,
+    "src/features/preview-renderer/renderer.ts"
+  ));
+
+  const result = resolveAttachment({ attachment: { payloadJson: "not-json" } });
+  assert.equal(result.shouldDisplay, false, "expected shouldDisplay: false for invalid payload");
+});
+
+test("template renderer resolveAttachment returns display info for valid payload", () => {
+  const { resolveAttachment } = require(path.resolve(
+    projectRoot,
+    "src/features/preview-renderer/renderer.ts"
   ));
 
   const payloadJson = JSON.stringify({
@@ -291,111 +405,100 @@ test("template renderer resolves buttons and copies payload json", async () => {
       ]
     }
   });
-  const attachment = { payloadJson };
-  const resolved = resolveAttachment({ attachment });
 
-  assert.equal(resolved.displayName, "Template Preview · Template plugin headline");
-  assert.deepEqual(
-    resolved.buttons.map((entry) => entry.id),
-    ["copy-payload-json", "copy-renderer-context"]
-  );
-
-  let copiedText = null;
-  const output = await invokeOperation(
-    {
-      attachment,
-      buttonID: "copy-payload-json"
-    },
-    {
-      host: {
-        clipboard: {
-          async copyText(value) {
-            copiedText = value;
-          }
-        }
-      }
-    }
-  );
-
-  assert.equal(output.success, true);
-  assert.equal(output.userMessage, "Template payload copied");
-  assert.match(copiedText, /"kind": "template_preview"/);
+  const result = resolveAttachment({ attachment: { payloadJson } });
+  // displayName is fixed; headline is surfaced in the Vue component, not in the runtime result.
+  assert.equal(result.displayName, "Template Preview");
+  // Runtime returns no seed buttons; UI's setButtons() is the sole source of buttons.
+  assert.ok(!result.buttons || result.buttons.length === 0, "runtime renderer must not return seed buttons");
+  assert.equal(result.shouldDisplay, undefined, "shouldDisplay omitted means true by default");
 });
 
-test("template draft action applies tags and pin state", async () => {
-  const { createTemplateDraftAction } = require(path.resolve(
+test("template expanded renderer only exposes resolveAttachment — no invokeOperation", () => {
+  const { createTemplateExpandedRenderer } = require(path.resolve(
     projectRoot,
-    "src/runtime/actions/templateDraftAction.js"
+    "src/features/expanded-renderer/renderer.ts"
+  ));
+  const renderer = createTemplateExpandedRenderer();
+  assert.equal(typeof renderer.resolveAttachment, "function", "expected resolveAttachment method");
+  assert.equal(renderer.invokeOperation, undefined, "expected no invokeOperation on expanded renderer");
+});
+
+test("template expanded renderer resolveAttachment returns display info for valid payload", () => {
+  const { resolveAttachment } = require(path.resolve(
+    projectRoot,
+    "src/features/expanded-renderer/renderer.ts"
   ));
 
-  const action = createTemplateDraftAction();
-  const session = await action.resolveSession({
-    item: {
-      text: "Draft action example",
-      tags: ["existing"]
-    }
-  });
-
-  assert.deepEqual(
-    session.buttons.map((entry) => entry.id),
-    ["copy-item-json", "copy-session-json", "copy-draft-json", "apply-metadata"]
-  );
-  assert.equal(session.initialDraft.templateTag, "template-plugin");
-
-  let appliedTags = null;
-  let pinnedValue = null;
-
-  const result = await action.invokeOperation(
-    {
-      item: {
-        text: "Draft action example",
-        tags: ["existing"]
-      },
-      draft: {
-        templateTag: "release-note",
-        shouldPin: true
-      },
-      buttonID: "apply-metadata"
+  const expandedPayload = {
+    kind: "template_expanded",
+    version: 1,
+    contentKind: "text",
+    display: {
+      typeLabel: "Text",
+      headline: "Expanded headline",
+      subheadline: "Expanded subheadline",
+      facts: []
     },
-    {
-      host: {
-        capabilities: {
-          canSetTags: true,
-          canSetPinned: true
-        },
-        item: {
-          async setTags(nextTags) {
-            appliedTags = nextTags;
-          },
-          async setPinned(nextPinned) {
-            pinnedValue = nextPinned;
-          }
-        }
-      }
-    }
-  );
-
-  assert.equal(result.result.resultKind, "none");
-  assert.equal(result.userMessage, "Template metadata applied and pinned");
-  assert.deepEqual(appliedTags, ["existing", "template-plugin", "release-note"]);
-  assert.equal(pinnedValue, true);
+    extended: { contentKind: "text", sourceAppID: "preview.app", tags: [], text: "" },
+    debug: {}
+  };
+  const result = resolveAttachment({ attachment: { payloadJson: JSON.stringify(expandedPayload) } });
+  // displayName is fixed; headline is surfaced in the Vue component, not in the runtime result.
+  assert.equal(result.displayName, "Template Expanded");
+  assert.equal(result.tintHex, "#2563EB");
+  // Runtime returns no seed buttons; UI's setButtons() is the sole source of buttons.
+  assert.ok(!result.buttons || result.buttons.length === 0, "runtime renderer must not return seed buttons");
 });
 
-test("template auto action returns copyable metadata for non-text items", async () => {
+// template-draft-action and its feature directory (src/features/draft-action/)
+// were removed in plugin-api-shrink. The draft action demo is now gallery-draft
+// in src/features/capability-gallery/runtime/draft-action.ts.
+// Verify the old path does NOT exist (regression guard against accidental re-introduction).
+test("src/features/draft-action/ must not exist after plugin-api-shrink removal", () => {
+  const fs = require("node:fs");
+  const draftActionDir = path.resolve(projectRoot, "src/features/draft-action");
+  assert.ok(
+    !fs.existsSync(draftActionDir),
+    "src/features/draft-action/ must not exist — it was removed in plugin-api-shrink"
+  );
+});
+
+test("template auto-run action exposes runAutoAction + stub resolveSession, no legacy invokeOperation", () => {
+  // Post plugin-api-shrink (R13 strict handler), PluginAutoRunActionHandler
+  // requires BOTH `resolveSession` and `runAutoAction`. Auto-run lifecycle
+  // actions provide a minimal resolveSession stub the host never reads.
+  // The legacy `invokeOperation` key remains explicitly forbidden — the
+  // runtime SDK `validateRegistry` still throws on it (kept as a regression
+  // guard against pre-rename plugin shapes).
   const { createTemplateAutoAction } = require(path.resolve(
     projectRoot,
-    "src/runtime/actions/templateAutoAction.js"
+    "src/features/auto-action/action.ts"
+  ));
+  const action = createTemplateAutoAction();
+  assert.equal(typeof action.runAutoAction, "function", "expected runAutoAction method");
+  assert.equal(typeof action.resolveSession, "function", "expected resolveSession method (R13 strict handler)");
+  assert.equal(action.invokeOperation, undefined, "expected no legacy invokeOperation on auto-run action");
+});
+
+test("template auto action runAutoAction returns copyable metadata for non-text items", async () => {
+  const { createTemplateAutoAction } = require(path.resolve(
+    projectRoot,
+    "src/features/auto-action/action.ts"
   ));
 
   const action = createTemplateAutoAction();
-  const result = await action.invokeOperation(
+  const result = await action.runAutoAction(
     {
       item: {
         id: "image-item",
         type: "image",
-        text: null,
         tags: ["asset"],
         sourceAppID: "preview.app"
+      },
+      content: {
+        kind: "image",
+        bytes: 0, width: 0, height: 0, format: "png"
       },
       draft: {},
       buttonID: null,
@@ -413,4 +516,112 @@ test("template auto action returns copyable metadata for non-text items", async 
   assert.match(result.result.text, /Template Auto Action/);
   assert.match(result.result.text, /Image: Image item/);
   assert.match(result.result.text, /"triggerSource": "autoRun"/);
+});
+
+test("expanded renderer Vue uses attachAutoFit bounds matching manifest height", () => {
+  const manifest = loadManifest();
+  const expanded = manifest.attachmentRenderers.find(
+    (entry) => entry.id === "template-expanded-renderer"
+  );
+  assert.ok(expanded, "expected expanded renderer in manifest");
+
+  const vueSource = fs.readFileSync(
+    path.resolve(projectRoot, "src/features/expanded-renderer/app.vue"),
+    "utf8"
+  );
+
+  const minMatch = vueSource.match(/autoFit\(\s*\{[^}]*min:\s*(\d+)/);
+  const maxMatch = vueSource.match(/autoFit\(\s*\{[^}]*max:\s*(\d+)/);
+  assert.ok(minMatch && maxMatch, "expected autoFit({ min, max }) call");
+  assert.equal(Number(minMatch[1]), expanded.height.min);
+  assert.equal(Number(maxMatch[1]), expanded.height.max);
+});
+
+test("attachment / expanded Vue files use pasty CSS tokens instead of raw hex", () => {
+  // Note: src/features/draft-action/app.vue was removed in plugin-api-shrink.
+  const filesToScan = [
+    "src/features/preview-renderer/app.vue",
+    "src/features/expanded-renderer/app.vue"
+  ];
+
+  const guardedHexes = [
+    "#0f172a",
+    "#475569",
+    "#334155",
+    "#64748b",
+    "#f8fafc",
+    "#f1f5f9",
+    "#e2e8f0"
+  ];
+
+  function stripStringContent(source) {
+    return source.replace(/\/\*[\s\S]*?\*\//g, "");
+  }
+
+  function extractScopedStyle(source) {
+    const match = source.match(/<style scoped>([\s\S]*?)<\/style>/i);
+    return match ? match[1] : "";
+  }
+
+  for (const relativePath of filesToScan) {
+    const source = fs.readFileSync(path.resolve(projectRoot, relativePath), "utf8");
+    const styleBlock = stripStringContent(extractScopedStyle(source));
+    assert.ok(styleBlock.length > 0, `expected <style scoped> in ${relativePath}`);
+
+    for (const hex of guardedHexes) {
+      const lowercaseStyle = styleBlock.toLowerCase();
+      let cursor = 0;
+      while ((cursor = lowercaseStyle.indexOf(hex, cursor)) !== -1) {
+        const contextStart = Math.max(0, cursor - 80);
+        const context = lowercaseStyle.slice(contextStart, cursor);
+        const lastVar = context.lastIndexOf("var(--pasty-");
+        const lastClose = context.lastIndexOf(")");
+        const insideVar = lastVar !== -1 && lastVar > lastClose;
+        assert.ok(
+          insideVar,
+          `${relativePath}: hardcoded ${hex} must appear only as var(--pasty-..., ${hex}) fallback`
+        );
+        cursor += hex.length;
+      }
+    }
+  }
+});
+
+test("no dataBase64 references in plugin runtime source files", () => {
+  const srcDir = path.resolve(projectRoot, "src");
+  const thisFile = __filename;
+
+  function scanDir(dir) {
+    if (!fs.existsSync(dir)) return [];
+    const results = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        results.push(...scanDir(fullPath));
+      } else if (/\.(js|ts|cjs|mjs)$/.test(entry.name)) {
+        results.push(fullPath);
+      }
+    }
+    return results;
+  }
+
+  const allFiles = scanDir(srcDir).filter((f) => f !== thisFile);
+  const violations = [];
+
+  for (const filePath of allFiles) {
+    const source = fs.readFileSync(filePath, "utf8");
+    const lines = source.split("\n");
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (line.includes("dataBase64")) {
+        violations.push(`${filePath}:${i + 1}: ${line.trim()}`);
+      }
+    }
+  }
+
+  assert.deepEqual(
+    violations,
+    [],
+    `Found forbidden 'dataBase64' references in plugin source:\n${violations.join("\n")}`
+  );
 });

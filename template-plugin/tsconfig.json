@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "Preserve",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"],
+    "jsx": "preserve",
+    "allowSyntheticDefaultImports": true,
+    "isolatedModules": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@pasty/plugin-sdk/runtime": ["sdk/src/runtime/index.ts"],
+      "@pasty/plugin-sdk/ui": ["sdk/src/ui/index.ts"]
+    }
+  },
+  "include": [
+    "env.d.ts",
+    "src/**/*.ts",
+    "src/**/*.vue"
+  ]
+}

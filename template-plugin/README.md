@@ -1,228 +1,119 @@
 # Template Plugin
 
-`template-plugin/` 是给插件作者准备的最小全功能模板工程，也是当前提供给作者 fork 的源码型插件示例。
+> 写新插件先看 [GUIDE.md](./GUIDE.md)。它和本工程一起就是开发 Pasty 插件的完整起步资料。
 
-字段约束、消息协议和能力边界以同目录的 `GUIDE.md` 为准；本 README 负责说明这个模板工程如何 fork、构建、预览和改造。
+`template-plugin/` 是给三方插件作者和 AI 助手准备的**最小全功能**模板工程，演示了 Pasty 当前所有的扩展点：detector、attachment renderer（compact + expanded）、auto-run action、draft action，并内嵌 `@pasty/plugin-sdk`。
 
-它保留了参考插件工程需要的核心开发体验：
+只需要这一个工程就能开发出生产可用的 Pasty 插件——架构、API、字段约束都以代码为真相源，文档同步更新。
 
-- manifest + source-based runtime / UI 构建流程
-- 内嵌源码版 runtime SDK 与 UI bridge SDK
-- detector / attachment renderer / `auto-run action` / `draft action + UI`
-- `npm run build` + `npm test` + `scripts/verify-build.mjs`
+## 三份必读文档
 
-但它去掉了 demo 业务依赖和示例逻辑，只保留能直接改造的模板骨架。
+| 文档 | 用途 |
+|---|---|
+| [GUIDE.md](./GUIDE.md) | 插件开发完整指南：快速开始、架构、manifest、三类入口实现、入参形状、权限模型、坑点 Q&A |
+| [sdk/API.md](./sdk/API.md) | 由 `protocol/plugin/src/catalog.ts` 自动生成的 API 真相源：23 个 capability、7 个 host event、22 个命名类型的精确签名 |
+| [sdk/SPECIFICATION.md](./sdk/SPECIFICATION.md) | SDK 形状规则（Topic / OptionalTopic / Stream / Verb）、命名约定、扩展 capability 的 PR 流程 |
 
-当前模板默认走“紧凑元数据参考工程”路线：
+> `sdk/API.md` 是**镜像文件**。运行 `cd protocol/plugin && npm run codegen` 时由 codegen 自动同步——文档与 catalog 不会漂移。
 
-- detector 默认覆盖 `text`、`image`、`path_reference`
-- action 默认覆盖 `text`、`image`、`path_reference`
-- renderer UI 默认低高度、少展示，只保留关键字段
-- copy 按钮默认复制完整 payload / session / item / draft JSON，方便作者直接观察真实输入
-
-## 1. 适合拿它做什么
-
-这个模板适合直接作为新插件起点：
-
-- 改 `manifest.json` 里的 `plugin.id`、`title`、`attachmentType`
-- 替换 `src/runtime/` 里的 detector / renderer / action 逻辑
-- 替换 `src/ui/` 里的 renderer 页面和 draft action 页面
-- 保留 `src/runtime/sdk/` 与 `src/ui/sdk/` 作为内嵌 helper
-- 保留紧凑 metadata inspector 的布局骨架，只替换你自己的业务字段和 copy 逻辑
-
-如果你想查完整字段和 contract 说明，直接看同目录 `GUIDE.md`。
-
-## 2. 工程结构
+## 工程结构
 
 ```text
 template-plugin/
-├── README.md
 ├── manifest.json
 ├── package.json
-├── package-lock.json
+├── sdk/                                ← 内嵌 @pasty/plugin-sdk（通过 file:./sdk 引用）
+│   ├── API.md                          ← codegen 同步的 API 真相源（自动镜像）
+│   ├── README.md                       ← SDK 公共符号速查
+│   ├── SPECIFICATION.md                ← 形状规则与扩展流程
+│   ├── package.json
+│   ├── dist/                           ← 编译产物（npm install 自动生成）
+│   └── src/
 ├── scripts/
 │   ├── build-runtime.mjs
 │   ├── build-ui.mjs
-│   ├── install.mjs
 │   └── verify-build.mjs
 ├── src/
-│   ├── runtime/
-│   │   ├── index.js
-│   │   ├── sdk/
-│   │   ├── detectors/
-│   │   │   └── templateDetector.js
-│   │   ├── renderers/
-│   │   │   └── templateRenderer.js
-│   │   ├── actions/
-│   │   │   ├── templateAutoAction.js
-│   │   │   └── templateDraftAction.js
-│   │   └── shared/
-│   │       ├── templateAttachmentPayload.js
-│   │       └── templateCapabilityMetadata.js
-│   └── ui/
-│       ├── AttachmentTemplateApp.vue
-│       ├── DraftActionTemplateApp.vue
-│       ├── sdk/
-│       ├── composables/
-│       ├── shared/
-│       ├── renderers/template-renderer/
-│       └── actions/template-draft-action/
-├── tests/runtime/
-│   └── templateCapabilities.test.cjs
-└── dist/
+│   ├── features/                       ← 每个能力一个文件夹
+│   │   ├── preview-renderer/           ← detector + compact renderer + Vue app
+│   │   ├── expanded-renderer/          ← detector + 自适应高度 renderer + Vue app
+│   │   ├── auto-action/                ← auto-run action（无 UI）
+│   │   └── capability-gallery/         ← SDK 全能力演示参考（含 draft action）
+│   ├── shared/                         ← 跨 feature 的薄共享层
+│   │   ├── display.ts
+│   │   └── debug.ts
+│   ├── preview/                        ← 本地预览工作台（dev-only）
+│   │   ├── PreviewShellApp.vue
+│   │   ├── scenarios/
+│   │   └── preview-host/
+│   └── plugin.ts                       ← definePlugin 入口
+└── tests/runtime/
+    └── templateCapabilities.test.cjs
 ```
 
-## 3. 模板里已经演示的能力
+## 演示的能力
 
 ### detector
 
-- 文件：`src/runtime/detectors/templateDetector.js`
-- 输入：`text`、`image`、`path_reference`
-- 输出：一个 `plugin.template.full.preview` attachment
-- 作用：演示如何把三种 detector 输入统一映射成紧凑 preview payload，并额外保留完整 debug snapshot 供复制
+- 文件：`src/features/preview-renderer/detector.ts` + `src/features/expanded-renderer/detector.ts`
+- 输入：`text`、`image`、`path_reference`（三 kind 全覆盖）
+- 输出：`plugin.template.full.preview` 与 `plugin.template.full.expanded` attachment
+- 演示：用 `PluginContentEnvelope` / `PluginClipboardItem` 强类型处理三种 input kind，统一映射成 artifact
 
-### attachment renderer
+### attachment renderer（compact，固定高度）
 
-- 文件：`src/runtime/renderers/templateRenderer.js`
-- UI：`src/ui/renderers/template-renderer/`
-- 作用：演示 `resolveAttachment()`、`invokeOperation()`、按钮回调和 attachment bootstrap
-- 默认行为：只展示类型、标题、2 到 4 个关键 metadata；点击按钮复制完整 payload 或完整 renderer context JSON
+- 文件：`src/features/preview-renderer/renderer.ts` + `src/features/preview-renderer/app.vue`
+- 演示：`resolveAttachment()`、`pasty.attachmentRenderer.onHostInvoke`、固定 `height: 320`、12 个 theme token 主题适配
+
+### attachment renderer（expanded，自适应高度 + 主题事件）
+
+- 文件：`src/features/expanded-renderer/renderer.ts` + `src/features/expanded-renderer/app.vue`
+- 演示：manifest `height: { min: 120, max: 480 }` + `pasty.window.autoFit()` + `pasty.theme.on()` 驱动强调条颜色
 
 ### auto-run action
 
-- 文件：`src/runtime/actions/templateAutoAction.js`
-- 支持 item type：`text`、`image`、`path_reference`
-- 作用：演示无 UI action 如何返回可直接复制的完整执行上下文文本结果
+- 文件：`src/features/auto-action/action.ts`
+- 演示：无 UI action，runtime 完全闭环，返回 `actionResult.text(...)`/`actionResult.none(...)` 形态的执行上下文
+
+模板还声明了 `template-auto-action-text` / `template-auto-action-image` 两个子变体，用于演示超出免费配额后的 Plugin Pro 门控行为（manifest 共 4 个 action，超过默认配额 3 个）。
 
 ### draft action
 
-- 文件：`src/runtime/actions/templateDraftAction.js`
-- UI：`src/ui/actions/template-draft-action/`
-- 作用：演示 `resolveSession()`、draft bootstrap、draft 更新、button invoke、`setTags` / `setPinned`
-- 支持 item type：`text`、`image`、`path_reference`
-- 默认行为：UI 只显示少量关键字段，但提供 `Copy Item JSON`、`Copy Session JSON`、`Copy Draft JSON`
+- 文件：`src/features/capability-gallery/runtime/draft-action.ts` + `src/features/capability-gallery/draft-action-ui/app.vue`（manifest id：`gallery-draft`）
+- 演示：`resolveSession` 返回 `initialDraft` + buttons seed → UI 自管表单状态 → `pasty.action.complete(...)` 提交
 
-## 4. 默认模板在展示什么
+### capability-gallery（全集合 API 参考）
 
-### attachment renderer 里会看到
+- 目录：`src/features/capability-gallery/`（详见 [`src/features/capability-gallery/README.md`](./src/features/capability-gallery/README.md)）
+- 角色：与上面 4 个最小样板互补的 "SDK 全能力演示" feature——覆盖 23 个 capability、7 个 host event、4 个 permission、3 种 height 形态、3 种 actionResult 形态、3 种 item kind
+- 包含：1 detector（×3 attachment）+ 3 个 auto-run action + 1 draft action + 3 个 attachment renderer + 4 个 WebView（bounded 主舞台 + fixed + auto + draft-action）
+- 用途：三方插件作者想"这个 SDK 到底能做什么"的可点击参考
 
-- 当前类型：`Text`、`Image`、`Path`
-- 一个 headline
-- 一个简短 subtitle
-- 2 到 4 个 key facts
-- 用于复制完整上下文的按钮
+## 起步改造清单
 
-这块故意不做大预览，也不铺开原始正文，因为宿主 attachment 区域高度有限。
+最先改这几处，避免 manifest 与 runtime 脱节：
 
-### draft action 里会看到
+1. `manifest.json`——`plugin.id`、`title`、`attachmentType`、capability 列表
+2. `src/plugin.ts`——注册的 handler key 必须与 manifest `id` 完全一致
+3. `src/features/<feature>/payload.ts`（数据类型定义）
+4. `src/features/<feature>/detector.ts`（detector 处理）
+5. `src/features/<feature>/renderer.ts`（renderer runtime 处理）
+6. `src/features/<feature>/action.ts`（action 处理）
+7. `src/features/<feature>/app.vue`（对应的 UI 入口）
 
-- 当前 item 的紧凑摘要
-- 一个最小表单：tag、note、pin
-- copy 按钮和一个 apply 按钮
-- 一段明确说明：top-level action 只能拿到 item/session/draft，不会拿到 detector 那种原始 `content payload`
+通常**不需要改**：
 
-## 5. 开发流程
+- `sdk/`——内嵌 SDK；扩展 capability 见 [`sdk/SPECIFICATION.md`](./sdk/SPECIFICATION.md)
+- `src/shared/`——共享工具
+- `scripts/build-runtime.mjs` / `scripts/build-ui.mjs`
 
-安装依赖并构建：
+## 三个常用命令
 
-```bash
-npm install
-npm run build
+```sh
+npm install       # 装依赖 + sdk/prepare 自动编译 SDK
+npm run dev       # 启动 Vite 预览工作台
+npm test          # 运行 tests/ 下集成测试
+npm run build     # 生产构建到 dist/
 ```
 
-运行测试：
-
-```bash
-npm test
-```
-
-本地开发 UI 预览：
-
-```bash
-npm run dev
-npm run dev:renderer
-npm run dev:action
-```
-
-- `dev` 会打开本地 preview workbench，可在页面里切换 renderer / action、主题和 mock scenario。
-- `dev:renderer` / `dev:action` 会直接用对应 view 打开 workbench，适合只调单个界面。
-- 这个 workbench 会模拟可手动调整尺寸的宿主 viewport、位于宿主 chrome 的 resize 控件、宿主 action strip、bootstrap / search / theme 事件。
-- 本地预览模式下没有真实宿主，因此 bridge 的执行类调用会退化为 `console.info(...)`，重点用于调布局、文案、响应式和不同 viewport 尺寸下的表现。
-
-本地开发时，把当前插件项目根目录作为 `Developer Plugins` 的路径加入宿主即可。
-
-如果你是把这个源码目录直接交给宿主安装，而不是走 `Developer Plugins` 开发模式：
-
-- `manifest.json` 已声明 `install.runtime` 与 `install.entry`
-- 宿主会在 staging plugin root 下先运行 `scripts/install.mjs`
-- install hook 完成后，宿主再校验 `dist/runtime/index.cjs` 和 `dist/ui/` 下的声明产物是否存在
-- 如果脚本本身退出失败，宿主会把它视为 install hook execution failure
-- 如果脚本成功但声明产物缺失，宿主会把它视为 runtime output validation failure
-
-`Developer Plugins` 模式的边界也要注意：
-
-- 宿主只消费 `manifest.json` 声明的 runtime/ui 产物，不负责自动安装依赖、自动 build、自动 watch 或自动 reload
-- 代码改动后需要你自己重新构建；下一次 capability 触发时宿主会读取最新产物
-- 如果你改了 `manifest.json`、capability 列表或入口路径，修改不会自动生效，需要手动 `Reload`
-
-## 6. 开始改造时优先改哪些文件
-
-建议最先一起改这几处，避免 manifest 和 runtime 脱节：
-
-1. `manifest.json`
-2. `src/runtime/index.js`
-3. `src/runtime/shared/templateCapabilityMetadata.js`
-4. `src/runtime/shared/templateAttachmentPayload.js`
-5. `src/runtime/detectors/templateDetector.js`
-6. `src/runtime/renderers/templateRenderer.js`
-7. `src/runtime/actions/templateAutoAction.js`
-8. `src/runtime/actions/templateDraftAction.js`
-9. `src/ui/AttachmentTemplateApp.vue`
-10. `src/ui/DraftActionTemplateApp.vue`
-
-如果你改了下面这些 ID / 类型名，记得同步改全套引用：
-
-- `plugin.id`
-- `attachmentRenderers[].id`
-- `detectors[].id`
-- `actions[].id`
-- `attachmentType`
-- UI 入口路径 `uiEntry`
-
-## 7. 哪些文件通常不需要改
-
-除非你要换构建链路，否则一般直接保留：
-
-- `src/runtime/sdk/**`
-- `src/ui/sdk/**`
-- `src/ui/composables/**`
-- `scripts/build-runtime.mjs`
-- `scripts/install.mjs`
-
-## 8. 作者改模板时最常见的边界误解
-
-- detector 能看到 `input.content.payload`，所以它能区分 `text / image / path_reference` 的真实输入形状
-- top-level action 看不到 detector 输入里的 `image.dataBase64` 或 `path_reference.entries`
-- renderer runtime 能拿到 item + attachment；如果要把 UI 侧 bootstrap/search/theme 一起复制出来，需要通过 `invokeOperation(..., params)` 把这些 UI 数据传回 runtime
-- UI 不直接拿宿主高权限能力；复制、tag、pin 等操作都应该回到 runtime 执行
-
-## 9. 验证约定
-
-模板自带了三层验证：
-
-- `npm test`
-  - 校验 manifest、runtime handler、最小行为
-- `npm run build`
-  - 产出 runtime bundle 和 UI bundle
-- `node ./scripts/verify-build.mjs`
-  - 校验构建产物路径和关键 runtime 注册项
-
-宿主内的最小 smoke 路径建议至少覆盖这些步骤：
-
-- 以源码目录直接安装，或把当前插件项目根目录加到 `Developer Plugins`
-- 准备一个 `text`、`image` 或 `path_reference` item，确认出现 `Template Preview`
-- 打开 renderer，确认 `Copy Payload` 和 `Copy Context` 可用
-- 触发 `Template Auto Action`，确认返回可复制的执行上下文文本
-- 触发 `Template Draft Action`，确认 `Copy Item JSON`、`Copy Session JSON`、`Copy Draft JSON` 和 `Apply Metadata` 都能运行
-
-如果你替换了页面名称、action ID 或 renderer ID，记得同步更新对应测试和 `verify-build.mjs`。
+完整说明、字段规范、API 参考与权限模型见 [GUIDE.md](./GUIDE.md)。
