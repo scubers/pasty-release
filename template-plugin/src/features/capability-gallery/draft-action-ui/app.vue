@@ -49,6 +49,32 @@
       </div>
     </section>
 
+    <section class="draft-shell__panel">
+      <p class="draft-shell__section-label">image asset</p>
+      <p class="draft-shell__hint">Current clipboard image (<code>pasty.asset.currentItemImageUrl</code>):</p>
+      <img
+        v-if="currentImageUrl"
+        :src="currentImageUrl"
+        alt="Current clipboard image"
+        class="draft-shell__img"
+      />
+      <p v-else class="draft-shell__img-placeholder">not an image item</p>
+      <button
+        type="button"
+        class="draft-shell__btn draft-shell__btn--image"
+        @click="generateSolidImage"
+      >
+        <strong class="draft-shell__btn-label">Generate solid image (Node)</strong>
+        <code class="draft-shell__btn-api">pasty.runtime.invoke(createSolidImage)</code>
+      </button>
+      <img
+        v-if="generatedImageUrl"
+        :src="generatedImageUrl"
+        alt="Generated solid image"
+        class="draft-shell__img"
+      />
+    </section>
+
     <section class="draft-shell__panel draft-shell__panel--log">
       <p class="draft-shell__section-label">log (host invokes + action.complete)</p>
       <ol class="draft-shell__log">
@@ -71,7 +97,7 @@ import type { PluginActionSetButtonsPayload } from "@pasty/plugin-sdk/ui";
 import { pasty } from "@pasty/plugin-sdk/ui";
 import { useTopicRef } from "../../../shared/composables/useTopicRef";
 import { decodeGalleryDraft, type GalleryDraft } from "../runtime/draft";
-import { GALLERY_RPC_KEYS } from "../runtime/messages";
+import { GALLERY_RPC_KEYS, type GallerySolidImageResponse } from "../runtime/messages";
 import { galleryActionCapabilities, type GalleryActionButton } from "./catalog";
 
 interface LogEntry {
@@ -186,6 +212,44 @@ async function handleClick(button: GalleryActionButton): Promise<void> {
   if (button.id === "action-complete-none") return completeNone();
 }
 
+const currentImageUrl = ref<string | null>(null);
+const generatedImageUrl = ref<string | null>(null);
+
+async function loadCurrentItemImage(): Promise<void> {
+  const ts = new Date().toISOString();
+  try {
+    const response = await pasty.asset.currentItemImageUrl();
+    currentImageUrl.value = response.url ?? null;
+    pushLog({ ts, api: "pasty.asset.currentItemImageUrl()", detail: response.url ?? "(no url)" });
+  } catch (err) {
+    pushLog({
+      ts,
+      api: "pasty.asset.currentItemImageUrl()",
+      detail: err instanceof Error ? err.message : String(err),
+      error: true,
+    });
+  }
+}
+
+async function generateSolidImage(): Promise<void> {
+  const ts = new Date().toISOString();
+  try {
+    const response = await pasty.runtime.invoke<GallerySolidImageResponse>({
+      key: GALLERY_RPC_KEYS.createSolidImage,
+      payload: {},
+    });
+    generatedImageUrl.value = response.url;
+    pushLog({ ts, api: `pasty.runtime.invoke({ key: "${GALLERY_RPC_KEYS.createSolidImage}" })`, detail: response.url });
+  } catch (err) {
+    pushLog({
+      ts,
+      api: `pasty.runtime.invoke({ key: "${GALLERY_RPC_KEYS.createSolidImage}" })`,
+      detail: err instanceof Error ? err.message : String(err),
+      error: true,
+    });
+  }
+}
+
 let unsubHostInvoke: (() => void) | null = null;
 
 async function handleHostInvoke(detail: { buttonID?: string } | null | undefined): Promise<void> {
@@ -204,6 +268,7 @@ async function handleHostInvoke(detail: { buttonID?: string } | null | undefined
 onMounted(async () => {
   await pasty.action.setButtons({ buttons: BUTTON_VARIANTS[draft.buttonsConfigVariant] });
   unsubHostInvoke = pasty.action.onHostInvoke.on(handleHostInvoke);
+  await loadCurrentItemImage();
 });
 
 onUnmounted(() => {
@@ -388,6 +453,26 @@ onUnmounted(() => {
 .draft-shell__btn-desc {
   font-size: 10px;
   color: var(--pasty-text-secondary, #475569);
+}
+
+.draft-shell__img {
+  max-width: 100%;
+  max-height: 120px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid var(--pasty-border, rgba(226, 232, 240, 0.9));
+  align-self: flex-start;
+}
+
+.draft-shell__img-placeholder {
+  margin: 0;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--pasty-text-tertiary, #64748b);
+}
+
+.draft-shell__btn--image {
+  align-self: flex-start;
 }
 
 .draft-shell__panel--log {

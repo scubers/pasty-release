@@ -20,6 +20,7 @@ export const GALLERY_RPC_KEYS = {
   settingsGetAll: "gallery.host.settings.getAll",
   consoleLog: "gallery.host.console.log",
   copyImageFlow: "gallery.host.copyImageFlow",
+  createSolidImage: "gallery.host.createSolidImage",
 } as const;
 
 export type GalleryRpcKey = (typeof GALLERY_RPC_KEYS)[keyof typeof GALLERY_RPC_KEYS];
@@ -37,4 +38,9 @@ export interface GalleryRpcResponse {
 export interface GalleryCopyImageResponse {
   imageTempPath: string;
   imageFormatHint: string;
+}
+
+export interface GallerySolidImageResponse {
+  // pasty-asset:// URL the WebView can render directly in an <img>.
+  url: string;
 }

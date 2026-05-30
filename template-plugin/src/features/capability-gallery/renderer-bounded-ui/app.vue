@@ -14,6 +14,8 @@
 
     <RuntimeBridgePanel :sections="allSections" :on-invoke="handleInvoke" />
 
+    <ImagePanel @log="pushEntry" />
+
     <TextInputProbe @log="pushEntry" />
 
     <LogPanel :entries="entries" />
@@ -31,6 +33,7 @@ import TopicMonitor from "./components/TopicMonitor.vue";
 import CapabilityBoard from "./components/CapabilityBoard.vue";
 import RuntimeBridgePanel from "./components/RuntimeBridgePanel.vue";
 import TextInputProbe from "./components/TextInputProbe.vue";
+import ImagePanel from "./components/ImagePanel.vue";
 
 interface LogEntry {
   ts: string;

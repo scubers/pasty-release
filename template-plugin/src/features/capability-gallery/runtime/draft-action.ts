@@ -14,8 +14,10 @@ import type {
   RuntimeMessageContract,
 } from "@pasty/plugin-sdk/runtime";
 import { promises as fs } from "node:fs";
+import os from "node:os";
 import path from "node:path";
-import { GALLERY_RPC_KEYS, type GalleryCopyImageResponse, type GalleryRpcRequest, type GalleryRpcResponse } from "./messages.ts";
+import { GALLERY_RPC_KEYS, type GalleryCopyImageResponse, type GalleryRpcRequest, type GalleryRpcResponse, type GallerySolidImageResponse } from "./messages.ts";
+import { solidColorPng } from "./solid-png.ts";
 import { createInitialGalleryDraft } from "./draft.ts";
 
 export type { GalleryDraft } from "./draft.ts";
@@ -153,6 +155,40 @@ export function createGalleryMessageHandlers(): Record<string, MessageTuple[1]> 
         }
         await fs.copyFile(sourcePath, tempPath);
         return { imageTempPath: tempPath, imageFormatHint };
+      },
+    ),
+    // createSolidImage — Node generates a solid-color PNG, registers it through
+    // host.asset.registerImage, and returns the pasty-asset:// URL the WebView
+    // renders. Demonstrates the B (Node-produced image) path end-to-end.
+    defineMessage<Record<string, never>, GallerySolidImageResponse>(GALLERY_RPC_KEYS.createSolidImage).handle(
+      async (_req, ctx) => {
+        const ctxAny = ctx as {
+          host?: { asset?: { registerImage?: (p: { path: string }) => Promise<{ url: string }> } };
+        };
+        const registerImage = ctxAny?.host?.asset?.registerImage;
+        if (typeof registerImage !== "function") {
+          throw new Error("host.asset.registerImage unavailable");
+        }
+        // Random color so each click visibly yields a different image.
+        const rgb: [number, number, number] = [
+          Math.floor(Math.random() * 256),
+          Math.floor(Math.random() * 256),
+          Math.floor(Math.random() * 256),
+        ];
+        const png = solidColorPng(160, 160, rgb);
+        const tmpPath = path.join(
+          os.tmpdir(),
+          `pasty-gallery-solid-${Date.now()}-${Math.random().toString(36).slice(2)}.png`,
+        );
+        await fs.writeFile(tmpPath, png);
+        try {
+          // Host validates + copies into the session owner dir, then mints a
+          // token; our temp original can be removed right after.
+          const { url } = await registerImage({ path: tmpPath });
+          return { url };
+        } finally {
+          await fs.unlink(tmpPath).catch(() => {});
+        }
       },
     ),
   ];

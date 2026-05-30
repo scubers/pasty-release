@@ -23,17 +23,19 @@ capability-gallery/
 │   ├── auto-actions.ts               3 auto-run actions (text / image / none)
 │   ├── draft-action.ts               draft-action handler + RPC message bridge
 │   ├── renderers.ts                  3 attachmentRenderer resolvers
-│   └── messages.ts                   GALLERY_RPC_KEYS — keys shared with UI
+│   ├── messages.ts                   GALLERY_RPC_KEYS — keys shared with UI
+│   └── solid-png.ts                  zero-dep solid-color PNG encoder (createSolidImage)
 ├── renderer-fixed-ui/              — height: 240 (compact, read-only)
 ├── renderer-auto-ui/               — height: "auto" (content-driven)
 ├── renderer-bounded-ui/            — height: { min: 120, max: 480 } (MAIN STAGE)
 │   ├── catalog.ts                    galleryCapabilitySections — single
 │   │                                 source of truth for the button grid
 │   └── components/                   LogPanel, TopicMonitor, CapabilityBoard,
-│                                     RuntimeBridgePanel, TextInputProbe
+│                                     RuntimeBridgePanel, TextInputProbe,
+│                                     ImagePanel (asset.currentItemImageUrl + createSolidImage)
 └── draft-action-ui/                — action-scope capability tour
     ├── catalog.ts                    galleryActionCapabilities — action-scope
-    └── app.vue                       action.{setButtons,complete×3,allocate…}
+    └── app.vue                       action.{setButtons,complete×3,allocate…} + image asset
 ```
 
 ## Capability coverage matrix (UI scope)
@@ -70,6 +72,27 @@ column points to the demo button or component you click in the running plugin.
 That's **23 verbs total**: 19 base + 1 attachment + 3 action. The contract
 test at `tests/integration/galleryWiring.test.cjs` enforces that every entry
 above appears as a button (or programmatic call) in the gallery catalogs.
+
+### Image asset rendering (`pasty.asset`)
+
+Image display sits outside the button-grid matrix above — an image needs to be
+*shown*, not logged — so it lives in a dedicated `ImagePanel` component rather
+than a catalog button:
+
+| capability | side | where |
+|---|---|---|
+| `asset.currentItemImageUrl` | ui | bounded-ui · ImagePanel; draft-action-ui · image asset section |
+| `asset.registerImage` | runtime | bounded-ui · ImagePanel & draft-action-ui — "Generate solid image (Node)" button → `createSolidImage` RPC |
+
+The button asks the Node runtime to generate a random solid-color PNG
+(`runtime/solid-png.ts`, a zero-dep encoder), register it via
+`host.asset.registerImage`, and hand back the `pasty-asset://` URL the WebView
+renders in an `<img>`.
+
+> **Coverage gap:** the third asset verb, `asset.pathReferenceImageUrl`, is
+> **not** demonstrated — it needs a clipboard `path_reference` item pointing at
+> an image file, which the gallery detector does not set up. Its usage is
+> identical to `currentItemImageUrl`: `await pasty.asset.pathReferenceImageUrl({ index })`.
 
 ### Host-event coverage
 
