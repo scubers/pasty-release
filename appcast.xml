@@ -3,6 +3,15 @@
     <channel>
         <title>Pasty</title>
         <item>
+            <title>1.0.4</title>
+            <pubDate>Tue, 09 Jun 2026 19:07:27 +0000</pubDate>
+            <sparkle:version>44</sparkle:version>
+            <sparkle:shortVersionString>1.0.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.4/Pasty-1.0.4.zip" length="6907590" type="application/octet-stream" sparkle:edSignature="v2OlBv9pzndzEMXqTHgdZDunYVL82lqpPGhYFv94ToyLB9V3fpCYxMESkOKLYOmk+IzYFSceGGfAJL6Kq2BZDg=="/>
+        </item>
+        <item>
             <title>1.0.3</title>
             <pubDate>Sun, 07 Jun 2026 15:41:44 +0000</pubDate>
             <sparkle:version>43</sparkle:version>
@@ -19,15 +28,6 @@
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.2/Pasty-1.0.2.zip" length="6743622" type="application/octet-stream" sparkle:edSignature="GydgXzkwTn/xTpWJ5wmjU0LwPA83/k2uP69JAz3+e+LsY6AY03MlXW9rkyJ2IOamvfbvChVwzCLkINzs1sF+BA=="/>
-        </item>
-        <item>
-            <title>1.0.0</title>
-            <pubDate>Sat, 09 May 2026 07:40:07 +0000</pubDate>
-            <sparkle:version>41</sparkle:version>
-            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.0/Pasty-1.0.0.zip" length="6571753" type="application/octet-stream" sparkle:edSignature="fHhdeWBe/MGuo4ivzTvD0Db3a4atPMI7KPJtm0ld8k5mKGa++s09Dz3Flpz7utMQ7+dI7kWILq0yJRRzyIg/Cw=="/>
         </item>
     </channel>
 </rss>
