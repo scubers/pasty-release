@@ -3,6 +3,15 @@
     <channel>
         <title>Pasty</title>
         <item>
+            <title>1.0.6</title>
+            <pubDate>Sat, 13 Jun 2026 12:53:32 +0000</pubDate>
+            <sparkle:version>46</sparkle:version>
+            <sparkle:shortVersionString>1.0.6</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.6/Clipbus-1.0.6.zip" length="6922346" type="application/octet-stream" sparkle:edSignature="uwt3/Pi04Ht9ot0idk2tIQUu1Qp1rhQ50bPOv4S8gQmJ4nKNFkEqTwHCoxTisfWCKZS3g3xKVvuQ4BGiCtstAw=="/>
+        </item>
+        <item>
             <title>1.0.5</title>
             <pubDate>Sat, 13 Jun 2026 12:41:37 +0000</pubDate>
             <sparkle:version>45</sparkle:version>
@@ -19,15 +28,6 @@
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.4/Pasty-1.0.4.zip" length="6907590" type="application/octet-stream" sparkle:edSignature="v2OlBv9pzndzEMXqTHgdZDunYVL82lqpPGhYFv94ToyLB9V3fpCYxMESkOKLYOmk+IzYFSceGGfAJL6Kq2BZDg=="/>
-        </item>
-        <item>
-            <title>1.0.3</title>
-            <pubDate>Sun, 07 Jun 2026 15:41:44 +0000</pubDate>
-            <sparkle:version>43</sparkle:version>
-            <sparkle:shortVersionString>1.0.3</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.3/Pasty-1.0.3.zip" length="6901082" type="application/octet-stream" sparkle:edSignature="+uO4im07xCYbHn27yrQMP4gxDUq5fCIhCYxUBHE3LXbb5hEB1z9B/DNJ5LFNKwm9rQ3UFmvXc5zCIKIGeFmCAQ=="/>
         </item>
     </channel>
 </rss>
