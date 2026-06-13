@@ -3,6 +3,15 @@
     <channel>
         <title>Pasty</title>
         <item>
+            <title>1.0.5</title>
+            <pubDate>Sat, 13 Jun 2026 12:41:37 +0000</pubDate>
+            <sparkle:version>45</sparkle:version>
+            <sparkle:shortVersionString>1.0.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.5/Clipbus-1.0.5.zip" length="6922372" type="application/octet-stream" sparkle:edSignature="JMBM32JA7vqssEjOtcR4XooI5WTJnlR7fMykTSg0EG/XXhbNZPuRcw9NkOGtBuzQNVMt5pVyJlsRnrb8ckGUDg=="/>
+        </item>
+        <item>
             <title>1.0.4</title>
             <pubDate>Tue, 09 Jun 2026 19:07:27 +0000</pubDate>
             <sparkle:version>44</sparkle:version>
@@ -19,15 +28,6 @@
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.3/Pasty-1.0.3.zip" length="6901082" type="application/octet-stream" sparkle:edSignature="+uO4im07xCYbHn27yrQMP4gxDUq5fCIhCYxUBHE3LXbb5hEB1z9B/DNJ5LFNKwm9rQ3UFmvXc5zCIKIGeFmCAQ=="/>
-        </item>
-        <item>
-            <title>1.0.2</title>
-            <pubDate>Sat, 30 May 2026 13:16:40 +0000</pubDate>
-            <sparkle:version>42</sparkle:version>
-            <sparkle:shortVersionString>1.0.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.2/Pasty-1.0.2.zip" length="6743622" type="application/octet-stream" sparkle:edSignature="GydgXzkwTn/xTpWJ5wmjU0LwPA83/k2uP69JAz3+e+LsY6AY03MlXW9rkyJ2IOamvfbvChVwzCLkINzs1sF+BA=="/>
         </item>
     </channel>
 </rss>
