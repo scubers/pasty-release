@@ -1,7 +1,7 @@
 <?xml version="1.0" standalone="yes"?>
 <rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
-        <title>Pasty</title>
+        <title>Clipbus</title>
         <item>
             <title>1.1.0</title>
             <pubDate>Thu, 09 Jul 2026 17:38:13 +0000</pubDate>
@@ -9,7 +9,7 @@
             <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.1.0/Clipbus-1.1.0.zip" length="7606846" type="application/octet-stream" sparkle:edSignature="V1hA80aWYldrfJWAOdSvzdIr1mUxf3GjyaXjHkrIHML/C+/UFjaDKoBbrvRkCj1mHJ2DneHsKqJ2RazbwsnpAQ=="/>
+            <enclosure url="https://github.com/scubers/clipbus-release/releases/download/v1.1.0/Clipbus-1.1.0.zip" length="7606846" type="application/octet-stream" sparkle:edSignature="V1hA80aWYldrfJWAOdSvzdIr1mUxf3GjyaXjHkrIHML/C+/UFjaDKoBbrvRkCj1mHJ2DneHsKqJ2RazbwsnpAQ=="/>
         </item>
         <item>
             <title>1.0.9</title>
@@ -18,7 +18,7 @@
             <sparkle:shortVersionString>1.0.9</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.9/Clipbus-1.0.9.zip" length="7598014" type="application/octet-stream" sparkle:edSignature="tcwfuMQr/d21DebaQlHxR7rouCePj6ygF2IOobNr/M2rlOhmRMAMzFSM+fEk1OaENxNmGYTv/KfZ1VyABh9kCg=="/>
+            <enclosure url="https://github.com/scubers/clipbus-release/releases/download/v1.0.9/Clipbus-1.0.9.zip" length="7598014" type="application/octet-stream" sparkle:edSignature="tcwfuMQr/d21DebaQlHxR7rouCePj6ygF2IOobNr/M2rlOhmRMAMzFSM+fEk1OaENxNmGYTv/KfZ1VyABh9kCg=="/>
         </item>
         <item>
             <title>1.0.8</title>
@@ -27,7 +27,7 @@
             <sparkle:shortVersionString>1.0.8</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/scubers/pasty-release/releases/download/v1.0.8/Clipbus-1.0.8.zip" length="6986415" type="application/octet-stream" sparkle:edSignature="lLfh6WMNjKJSWM9mDFnIce794O1hxq7j8iOf1VN4WyKO60Z0Hq2+IVhCtEQWPro7gbBn34aZgb0Nr8KNvI1yCw=="/>
+            <enclosure url="https://github.com/scubers/clipbus-release/releases/download/v1.0.8/Clipbus-1.0.8.zip" length="6986415" type="application/octet-stream" sparkle:edSignature="lLfh6WMNjKJSWM9mDFnIce794O1hxq7j8iOf1VN4WyKO60Z0Hq2+IVhCtEQWPro7gbBn34aZgb0Nr8KNvI1yCw=="/>
         </item>
     </channel>
 </rss>
