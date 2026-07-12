@@ -3,6 +3,18 @@
     <channel>
         <title>Clipbus</title>
         <item>
+            <title>1.1.1</title>
+            <pubDate>Sun, 12 Jul 2026 17:07:48 +0000</pubDate>
+            <sparkle:version>51</sparkle:version>
+            <sparkle:shortVersionString>1.1.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <description><![CDATA[<h3>Clipbus 1.1.1</h3>
+<p>Maintenance update with fixes and improvements.</p>
+]]></description>
+            <enclosure url="https://github.com/scubers/clipbus-release/releases/download/v1.1.1/Clipbus-1.1.1.zip" length="7608759" type="application/octet-stream" sparkle:edSignature="kqwLaKIhbOv029YC2bD4FV//x4uheuSXUvQv0UiAgAuWdZVzex6W6zOugyaGZ9TA+juVJIssDS3Rb7K2I+fEDg=="/>
+        </item>
+        <item>
             <title>1.1.0</title>
             <pubDate>Thu, 09 Jul 2026 17:38:13 +0000</pubDate>
             <sparkle:version>50</sparkle:version>
@@ -19,15 +31,6 @@
             <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
             <enclosure url="https://github.com/scubers/clipbus-release/releases/download/v1.0.9/Clipbus-1.0.9.zip" length="7598014" type="application/octet-stream" sparkle:edSignature="tcwfuMQr/d21DebaQlHxR7rouCePj6ygF2IOobNr/M2rlOhmRMAMzFSM+fEk1OaENxNmGYTv/KfZ1VyABh9kCg=="/>
-        </item>
-        <item>
-            <title>1.0.8</title>
-            <pubDate>Mon, 29 Jun 2026 19:10:18 +0000</pubDate>
-            <sparkle:version>48</sparkle:version>
-            <sparkle:shortVersionString>1.0.8</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
-            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/scubers/clipbus-release/releases/download/v1.0.8/Clipbus-1.0.8.zip" length="6986415" type="application/octet-stream" sparkle:edSignature="lLfh6WMNjKJSWM9mDFnIce794O1hxq7j8iOf1VN4WyKO60Z0Hq2+IVhCtEQWPro7gbBn34aZgb0Nr8KNvI1yCw=="/>
         </item>
     </channel>
 </rss>
