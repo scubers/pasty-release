@@ -3,6 +3,18 @@
     <channel>
         <title>Clipbus</title>
         <item>
+            <title>1.2.0</title>
+            <pubDate>Sun, 19 Jul 2026 11:11:24 +0000</pubDate>
+            <sparkle:version>54</sparkle:version>
+            <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <sparkle:releaseNotesLink xml:lang="en">https://github.com/scubers/clipbus-release/releases/download/v1.2.0/Clipbus-1.2.0.en.md</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink xml:lang="ja">https://github.com/scubers/clipbus-release/releases/download/v1.2.0/Clipbus-1.2.0.ja.md</sparkle:releaseNotesLink>
+            <sparkle:releaseNotesLink xml:lang="zh">https://github.com/scubers/clipbus-release/releases/download/v1.2.0/Clipbus-1.2.0.zh.md</sparkle:releaseNotesLink>
+            <enclosure url="https://github.com/scubers/clipbus-release/releases/download/v1.2.0/Clipbus-1.2.0.zip" length="7416038" type="application/octet-stream" sparkle:edSignature="bnmTg/QKJh+RGWeerSsBQeCRM9qtTG2XlFIa0yYn1HwjHSSYxNusVo/jqJTO5JRN3pNsoXBcShTMqUSoeQxEBA=="/>
+        </item>
+        <item>
             <title>1.1.3</title>
             <pubDate>Wed, 15 Jul 2026 17:15:34 +0000</pubDate>
             <sparkle:version>53</sparkle:version>
